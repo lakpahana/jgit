@@ -128,3 +128,41 @@ function generateSHA1(data) {
     sha1.update(data);
     return sha1.digest("hex");
 }
+
+function commitTree() {
+    const treeSha = process.argv[3];
+    const parentSha = process.argv.includes("-p") ? process.argv[process.argv.indexOf("-p") + 1] : null;
+    const messageIndex = process.argv.indexOf("-m");
+    if (messageIndex === -1) {
+        throw new Error("Commit message not provided");
+    }
+    const message = process.argv[messageIndex + 1];
+
+    const author = {
+        name: "AGS Lakpahana",
+        email: "lakpahana@icloud.com"
+    };
+
+    const committer = {
+        name: "AGS Lakpahana",
+        email: "lakpahana@icloud.com"
+    };
+
+    const timestamp = Math.floor(Date.now() / 1000); // Current Unix timestamp
+
+    const commitContent = `tree ${treeSha}\n` +
+        (parentSha ? `parent ${parentSha}\n` : "") +
+        `author ${author.name} <${author.email}> ${timestamp} +0000\n` +
+        `committer ${committer.name} <${committer.email}> ${timestamp} +0000\n\n` +
+        `${message}\n`;
+
+    const compressedContent = zlib.deflateSync(commitContent);
+    const sha = generateSHA1(compressedContent);
+    const objectPath = path.join(__dirname, ".git", "objects", sha.slice(0, 2), sha.slice(2));
+    if (!fs.existsSync(objectPath)) {
+        fs.mkdirSync(path.join(__dirname, ".git", "objects", sha.slice(0, 2)), { recursive: true });
+        fs.writeFileSync(objectPath, compressedContent);
+        console.log(sha);
+    }
+}
+
