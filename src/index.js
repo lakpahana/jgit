@@ -1,10 +1,10 @@
-const fs = require("fs"); 
+const fs = require("fs");
 //from fs module we are importing the file system module
 //fs module provides a way of working with the file system
-const path = require("path"); 
+const path = require("path");
 // from path module we are importing the path module
 //path module provides utilities for working with file and directory paths
-const zlib = require("zlib"); 
+const zlib = require("zlib");
 // from zlib module we can compress and decompress the file,
 //why we are using zlib module because we are going to compress the file and store it in the .git/objects folder
 
