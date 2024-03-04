@@ -46,9 +46,9 @@ JGit uses the following built-in Node.js modules:
 - `crypto`: Cryptographic operations.
 - `https`: HTTP requests for cloning repositories.
 
-### Author
+### References
 
-AGS Lakpahana
+[Git Internals(git-scm.com)](https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain)
 
 ### License
 
