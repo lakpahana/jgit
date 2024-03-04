@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 const crypto = require("crypto");
+const https = require("https");
 
 const command = process.argv[2];
 switch (command) {
@@ -19,6 +20,12 @@ switch (command) {
         break;
     case "write-tree":
         writeTree();
+        break;
+    case "commit-tree":
+        commitTree();
+        break;
+    case "clone":
+        cloneRepository();
         break;
     default:
         throw new Error(`Unknown command ${command}`);
@@ -166,3 +173,52 @@ function commitTree() {
     }
 }
 
+function cloneRepository() {
+    const repoUrl = process.argv[3];
+    const targetDirectory = process.argv[4];
+    if (!repoUrl || !targetDirectory) {
+        throw new Error("Please provide both repository URL and target directory");
+    }
+
+    // Parse the repository URL to extract owner and repository name
+    const urlParts = repoUrl.split("/");
+    const owner = urlParts[urlParts.length - 2];
+    const repoName = urlParts[urlParts.length - 1].replace(".git", "");
+
+    // Create the target directory if it doesn't exist
+    fs.mkdirSync(targetDirectory, { recursive: true });
+
+    // Fetch the repository from GitHub
+    const options = {
+        hostname: "api.github.com",
+        path: `/repos/${owner}/${repoName}/tarball/main`, // Assuming main branch, change if needed
+        headers: {
+            "User-Agent": "YourAppName" // GitHub API requires a User-Agent header
+        }
+    };
+
+    // Send a GET request to fetch the repository tarball
+    https.get(options, response => {
+        if (response.statusCode === 200) {
+            const tarFilePath = path.join(targetDirectory, `${repoName}.tar.gz`);
+            const fileStream = fs.createWriteStream(tarFilePath);
+            response.pipe(fileStream);
+            fileStream.on("finish", () => {
+                fileStream.close();
+                // Extract the tarball
+                const extract = require("tar").x({
+                    file: tarFilePath,
+                    C: targetDirectory
+                });
+                extract.on("end", () => {
+                    fs.unlinkSync(tarFilePath); // Remove the tarball after extraction
+                    console.log("Repository cloned successfully!");
+                });
+            });
+        } else {
+            throw new Error(`Failed to clone repository. Status code: ${response.statusCode}`);
+        }
+    }).on("error", error => {
+        throw new Error(`Failed to clone repository. ${error}`);
+    });
+}
